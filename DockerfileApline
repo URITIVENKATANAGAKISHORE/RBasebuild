@@ -1,0 +1,34 @@
+FROM alpine:latest
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends \
+		gnupg-agent \
+		hub \
+		sudo \
+		openssh-server \
+		lmodern \
+		libssl-dev \
+		libcurl4-openssl-dev \
+		libxml2-dev \
+		graphviz \
+		libfontconfig1-dev \
+		git \
+		plantuml \
+		pandoc \
+		texlive-latex-base \
+		texlive-fonts-recommended \
+		texlive-fonts-extra \
+		texlive-latex-extra \
+		python3 \ 
+		python3-dev \
+		python3-pip \
+		python3-venv \
+	&& mkdir ~/.R \
+	&& rm -rf /var/lib/apt/lists/*
+	&& echo _R_CHECK_FORCE_SUGGESTS_=FALSE > ~/.R/check.Renviron
+RUN R -e "install.packages('reticulate',repos='http://cran.us.r-project.org', dependencies =TRUE)"
+RUN R -e "install.packages('rmarkdown',repos='http://cran.us.r-project.org', dependencies =TRUE)"
+RUN R -e "install.packages('pander',repos='http://cran.us.r-project.org', dependencies =TRUE)"
+RUN R -e "install.packages('knitr',repos='http://cran.us.r-project.org', dependencies =TRUE)"
+RUN R -e "install.packages('kableExtra',repos='http://cran.us.r-project.org', dependencies =TRUE)"
+
+CMD tail -f /dev/null
