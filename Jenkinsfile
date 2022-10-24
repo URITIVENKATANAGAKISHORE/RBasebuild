@@ -1,29 +1,36 @@
-pipeline{
+pipeline {
 	agent any
-	stages{
-		stage('Git Check Out') {
-			git credentialsId: 'github', url: 'https://github.com/URITIVENKATANAGAKISHORE/RBasebuild.git'
-			echo 'Git Checkout Completed'
+		environment {
+			//once you create ACR in Azure cloud, use that here
+			registryName = "vaultrotation"
+			//- update your credentials ID after creating credentials for connecting to ACR
+			registryCredential = 'ACR'
+			dockerImage = ''
+			registryUrl = 'vaultrotation.azurecr.io'
 		}
-		stage('Build Docker Image'){
-			steps{
-				sh 'sudo docker build -t vaultrotation.azurecr.io/Rbase:$BUILD_NUMBER .'
-				echo 'Build Image completed'
-			}
-		}
-		stage('Login to Azure and push the docker images to acr hub'){
-			steps{
-				withCredentials(){
-					sh 'docker login -u ${username} -p ${password} 
-					sh 'docker image push :${BUILD_NUMBER}'
+    
+    stages {
+		stage ('checkout') {
+            steps {
+				checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[url: 'https://github.com/URITIVENKATANAGAKISHORE/RBasebuild.git']]])
+            }
+        }
+		stage ('Build Docker image') {
+            steps {
+                
+                script {
+                    dockerImage = docker.build registryName
+                }
+            }
+        }
+       
+		stage('Upload Image to ACR') {
+			steps{   
+				script {
+					docker.withRegistry( "http://${registryUrl}", registryCredential ) {
+					dockerImage.push()
 				}
 			}
 		}
-		stage('Login to Docker Hub') {      	
-			steps{                       	
-			sh 'echo $DOCKERHUB_CREDENTIALS_PSW | sudo docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'                		
-			echo 'Login Completed'      
-			}           
-		}		
 	}
 }
